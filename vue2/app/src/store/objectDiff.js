@@ -77,9 +77,4 @@ export default {
     },
     excludeFields: ["test15"],
   },
-  getters: {
-    getOld: (state) => state.initialObject,
-    getNew: (state) => state.newObject,
-    getExcluded: (state) => state.excludeFields
-  }
 }

@@ -1,6 +1,6 @@
 <template>
-  <div class="main">
-    <div class="filters">
+  <div class="object_diff_page">
+    <div class="object_diff_page__filters">
       <div>
         <input v-model="filters.hideUnchanged" type="checkbox" id="hideUnchanged">
         <label for="hideUnchanged">Скрыть поля без изменений</label>
@@ -154,28 +154,28 @@ export default {
 </script>
 
 <style scoped lang="less">
-.main {
+.object_diff_page {
   display: flex;
   background: #212121;
   color: #ECECEC;
   justify-content: center;
-}
 
-.filters {
-  position: fixed;
-  top: 50%;
-  left: 100px;
-  display: flex;
-  flex-direction: column;
-  background: #1f1f1f;
-  padding: 20px;
-  border-radius: 10px;
-  border: 2px solid #1c1c1c;
-  gap: 10px;
-  font-size: 1.2rem;
-}
+  &__filters {
+    position: fixed;
+    top: 50%;
+    left: 100px;
+    display: flex;
+    flex-direction: column;
+    background: #1f1f1f;
+    padding: 20px;
+    border-radius: 10px;
+    border: 2px solid #1c1c1c;
+    gap: 10px;
+    font-size: 1.2rem;
 
-.filters input {
-  margin-right: 8px;
+    input {
+      margin-right: 8px;
+    }
+  }
 }
 </style>

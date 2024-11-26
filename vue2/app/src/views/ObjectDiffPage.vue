@@ -1,9 +1,9 @@
 <template>
-  <ObjectDiff :newObject="getNew" :oldObject="getOld" :excluded="getExcluded" />
+  <ObjectDiff :newObject="newObject" :oldObject="initialObject" :excluded="excludeFields" />
 </template>
 
 <script>
-import {mapGetters} from "vuex";
+import {mapState} from "vuex";
 import ObjectDiff from "../../../components/objectDiff/ObjectDiff.vue";
 
 export default {
@@ -12,7 +12,7 @@ export default {
     ObjectDiff
   },
   computed: {
-    ...mapGetters("objectDiff", ["getOld", "getNew", "getExcluded"]),
+    ...mapState("objectDiff", ["newObject", "initialObject", "excludeFields"]),
   },
 }
 </script>
