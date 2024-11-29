@@ -99,6 +99,11 @@ const routes = [
     path: '/objectDiff',
     name: 'objectDiff',
     component: () => import(/* webpackChunkName: "objectDiff" */'../views/./ObjectDiffPage')
+  },
+  {
+    path: '/custom-date',
+    name: 'customDate',
+    component: () => import(/* webpackChunkName: "objectDiff" */'../views/./CustomDatePage')
   }
 ]
 
