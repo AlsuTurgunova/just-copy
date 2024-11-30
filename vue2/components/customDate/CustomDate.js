@@ -1,4 +1,22 @@
 export class CustomDate {
+  /** @var {Date} */
+  _date;
+
+  /**
+   *
+   * @param date {string|null}
+   * @param pattern {string|null}
+   */
+  constructor(date = null, pattern = null) {
+    if (date === null) {
+      this.date = new Date();
+    } else if (pattern === null) {
+      this.date = new Date(date);
+    } else {
+      this.date = this._decodeDate(pattern, date);
+    }
+  }
+
   /**
    * Расшифровывает дату по паттерну
    * @param pattern {string}
@@ -6,7 +24,7 @@ export class CustomDate {
    * @return {Date}
    * @throws Error Дата не совпадает с паттерном
    */
-  static decodeDate(pattern, date) {
+  _decodeDate(pattern, date) {
     const regexMap = {
       YYYY: '(\\d{4})',
       YY: '(\\d{2})',
@@ -56,13 +74,12 @@ export class CustomDate {
   /**
    * Кодирует дату в соответствии с паттерном
    * @param pattern {string}
-   * @param date {Date}
    * @returns {string}
    */
-  static encodeDate(pattern, date) {
-    const year = date.getFullYear();
-    const month = date.getMonth() + 1; // Месяцы начинаются с 0
-    const day = date.getDate();
+  format(pattern) {
+    const year = this.date.getFullYear();
+    const month = this.date.getMonth() + 1; // Месяцы начинаются с 0
+    const day = this.date.getDate();
 
     return pattern
       .replace(/YYYY/g, year)
@@ -71,5 +88,94 @@ export class CustomDate {
       .replace(/M/g, month)
       .replace(/DD/g, String(day).padStart(2, '0'))
       .replace(/D/g, day);
+  }
+
+  /**
+   * Добавляет указанный промежуток к текущей дате
+   * @param value {number}
+   * @param unit {'day'|'week'|'month'|'year'}
+   * @returns {CustomDate}
+   */
+  add(value, unit) {
+    if (typeof value !== "number" || value < 0) {
+      throw new Error("Value must be a non-negative number.");
+    }
+    this._manipulateDate(value, unit);
+    return this;
+  }
+
+  sub(value, unit) {
+    if (typeof value !== "number" || value < 0) {
+      throw new Error("Value must be a non-negative number.");
+    }
+    this._manipulateDate(-value, unit);
+    return this;
+  }
+
+  /**
+   * Изменяет дату на указанную величину.
+   * @param value {number}
+   * @param unit {'day'|'week'|'month'|'year'}
+   * @returns {CustomDate}
+   */
+  _manipulateDate(value, unit) {
+    switch (unit) {
+      case "day":
+        this.date.setDate(this.date.getDate() + value);
+        break;
+      case "week":
+        this.date.setDate(this.date.getDate() + value * 7);
+        break;
+      case "month":
+        const currentDate = this.date.getDate();
+        this.date.setMonth(this.date.getMonth() + value);
+
+        // Adjust for shorter months
+        if (this.date.getDate() < currentDate) {
+          this.date.setDate(0); // Moves to the last day of the previous month
+        }
+        break;
+      case "year":
+        this.date.setFullYear(this.date.getFullYear() + value);
+        break;
+      default:
+        throw new Error(`Unsupported unit: ${unit}. Use 'day', 'week', 'month', or 'year'.`);
+    }
+  }
+
+  /**
+   * Устанавливает год и возвращает новое значение. Если year = null, то просто возвращает текущее значение
+   * @param year {number|null} - от 1 до 31
+   */
+  year(year = null) {
+    if (year !== null) {
+      this.date.setFullYear(year);
+    }
+
+    return this.date.getFullYear();
+  }
+
+  /**
+   * Устанавливает месяц и возвращает новое значение. Если month = null, то просто возвращает текущее значение
+   * @param month {number|null} - от 1 до 12
+   */
+  month(month = null) {
+    if (month !== null) {
+      this.date.setMonth(month - 1);
+    }
+
+    return this.date.getMonth() + 1;
+  }
+
+  /**
+   * Устанавливает день месяца и возвращает новое значение. Если day = null, то просто возвращает текущее значение
+   * @param day {number|null} - от 1 до 31
+   */
+  day(day = null) {
+    if (day !== null) {
+      this.date.setDate(day);
+    }
+
+    return this.date.getDate();
   }
 }

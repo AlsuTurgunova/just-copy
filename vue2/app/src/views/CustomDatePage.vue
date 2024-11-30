@@ -6,10 +6,22 @@
     </div>
     <div class="custom_date__row">
       <span>Date from</span>
-      <input type="text" v-model="dateFrom">
+      <input type="text" :value="formattedDateFrom" @input="changeDateFrom">
+    </div>
+    <div class="custom_date__row">
+      <button @click="sub(1, 'year')">-1 year</button>
+      <button @click="add(1, 'year')">+1 year</button>
+    </div>
+    <div class="custom_date__row">
+      <button @click="sub(1, 'month')">-1 month</button>
+      <button @click="add(1, 'month')">+1 month</button>
+    </div>
+    <div class="custom_date__row">
+      <button @click="sub(1, 'day')">-1 day</button>
+      <button @click="add(1, 'day')">+1 day</button>
     </div>
     <div class="custom_date__row custom_date__decoded">
-      <span>Decoded date: {{decodedDateFrom.getFullYear()}} {{decodedDateFrom.getMonth() + 1}} {{ decodedDateFrom.getDate()}}</span>
+      <span>Decoded date: {{dateFrom.format("YYYY MM DD")}}</span>
     </div>
     <div class="custom_date__row">
       <span>Pattern to</span>
@@ -30,18 +42,47 @@ export default {
   data() {
     return {
       patternFrom: "YYYY-MM-DD",
-      dateFrom: "2024-12-10",
+      dateFrom: new CustomDate("2024-12-10", "YYYY-MM-DD"),
+      formattedDateFrom: "2024-12-10",
       patternTo: "YYYY MM DD",
+      dateTo: "2024 12 10"
     }
   },
-  computed: {
-    decodedDateFrom() {
-      return CustomDate.decodeDate(this.patternFrom, this.dateFrom);
+  watch: {
+    patternTo(newVal) {
+      this.dateTo = this.dateFrom.format(newVal);
     },
-    dateTo() {
-      return CustomDate.encodeDate(this.patternTo, this.decodedDateFrom);
+    patternFrom(newVal) {
+      this.formattedDateFrom = this.dateFrom.format(newVal);
     }
   },
+  methods: {
+    /**
+     * Тоже можно сделать и через computed и/или watch. Но сложностей с реактивностью и объектами класса больше, чем с
+     * таким костылём
+     */
+    updateDates() {
+      this.dateFrom.format(this.patternTo);
+      this.formattedDateFrom = this.dateFrom.format(this.patternFrom);
+      this.dateTo = this.dateFrom.format(this.patternTo);
+    },
+    changeDateFrom(e) {
+      try {
+        this.dateFrom = new CustomDate(e.target.value, this.patternFrom);
+        this.updateDates();
+      } catch (error) {
+        // Входная дата не верна, игнорируем
+      }
+    },
+    add(value, unit) {
+      this.dateFrom.add(value, unit);
+      this.updateDates();
+    },
+    sub(value, unit) {
+      this.dateFrom.sub(value, unit);
+      this.updateDates();
+    }
+  }
 }
 </script>
 
@@ -75,6 +116,11 @@ export default {
       padding: 10px 10px;
       border: 1px solid #707070;
       border-radius: 5px;
+    }
+
+    button {
+      width: 100%;
+      margin: 0 10px;
     }
   }
 
