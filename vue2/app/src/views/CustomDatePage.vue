@@ -39,7 +39,7 @@ export default {
       return CustomDate.decodeDate(this.patternFrom, this.dateFrom);
     },
     dateTo() {
-      return CustomDate.encodeDate(this.patternFrom, this.decodedDateFrom);
+      return CustomDate.encodeDate(this.patternTo, this.decodedDateFrom);
     }
   },
 }
