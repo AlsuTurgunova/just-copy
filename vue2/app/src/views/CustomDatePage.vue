@@ -23,6 +23,8 @@
 </template>
 
 <script>
+import {CustomDate} from "../../../components/customDate/CustomDate";
+
 export default {
   name: "CustomDatePage",
   data() {
@@ -34,64 +36,10 @@ export default {
   },
   computed: {
     decodedDateFrom() {
-      const regexMap = {
-        YYYY: '(\\d{4})',
-        YY: '(\\d{2})',
-        MM: '(\\d{2})',
-        M: '(\\d{1,2})',
-        DD: '(\\d{2})',
-        D: '(\\d{1,2})',
-      };
-
-      // Создаём regex со всеми паттернами
-      let regexPattern = this.patternFrom;
-      for (const [key, value] of Object.entries(regexMap)) {
-        regexPattern = regexPattern.replace(new RegExp(key, 'g'), value);
-      }
-      const regex = new RegExp(`^${regexPattern}$`);
-      const match = this.dateFrom.match(regex);
-
-      if (!match) {
-        return;
-      }
-
-      // Вытаскиваем части даты
-      let year, month, day;
-      let matchIndex = 1; // match[0] это полная совпавшая строка
-
-      if (this.patternFrom.includes('YYYY')) {
-        year = parseInt(match[matchIndex++], 10);
-      } else if (this.patternFrom.includes('YY')) {
-        year = 2000 + parseInt(match[matchIndex++], 10); // Считаем 2000 год для годов из 2 цифр
-      }
-
-      if (this.patternFrom.includes('MM')) {
-        month = parseInt(match[matchIndex++], 10) - 1; // Месяцы начинаются с 0
-      } else if (this.patternFrom.includes('M')) {
-        month = parseInt(match[matchIndex++], 10) - 1;
-      }
-
-      if (this.patternFrom.includes('DD')) {
-        day = parseInt(match[matchIndex++], 10);
-      } else if (this.patternFrom.includes('D')) {
-        day = parseInt(match[matchIndex++], 10);
-      }
-
-      return new Date(year, month, day);
+      return CustomDate.decodeDate(this.patternFrom, this.dateFrom);
     },
     dateTo() {
-      const date = this.decodedDateFrom;
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1; // Месяцы начинаются с 0
-      const day = date.getDate();
-
-      return this.patternTo
-          .replace(/YYYY/g, year)
-          .replace(/YY/g, String(year).slice(-2))
-          .replace(/MM/g, String(month).padStart(2, '0'))
-          .replace(/M/g, month)
-          .replace(/DD/g, String(day).padStart(2, '0'))
-          .replace(/D/g, day);
+      return CustomDate.encodeDate(this.patternFrom, this.decodedDateFrom);
     }
   },
 }
