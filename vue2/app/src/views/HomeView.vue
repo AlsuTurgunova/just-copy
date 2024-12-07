@@ -54,6 +54,9 @@
     <p><router-link :to="{ name: 'customDate' }">
       customDate
     </router-link></p>
+    <p><router-link :to="{ name: 'timeTracker' }">
+      timeTracker
+    </router-link></p>
   </div>
 </template>
 <script>

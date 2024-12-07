@@ -98,7 +98,12 @@ const routes = [
   {
     path: '/custom-date',
     name: 'customDate',
-    component: () => import(/* webpackChunkName: "objectDiff" */'../views/./CustomDatePage')
+    component: () => import(/* webpackChunkName: "customDate" */'../views/./CustomDatePage')
+  },
+  {
+    path: '/time-tracker',
+    name: 'timeTracker',
+    component: () => import(/* webpackChunkName: "timeTracker" */'../views/TimeTrackerPage')
   }
 ]
 
