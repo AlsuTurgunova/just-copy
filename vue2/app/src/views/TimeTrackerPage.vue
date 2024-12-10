@@ -3,7 +3,7 @@
     <button class="tracker__add-btn" @click="addEntry">Добавить карточку</button>
     <table class="tracker__table">
       <template v-for="(entry, ri) in tracker">
-        <tr class="tracker__table__row-start" :key="ri">
+        <tr class="tracker__table__row-start" :key="ri" @click.right="e => showContextMenu(e, ri)">
           <td>
             <button class="tracker__table__add-task" @click="addTask(ri)">Добавить трекер</button>
           </td>
@@ -12,12 +12,10 @@
           </td>
           <td>
             <input type="text" v-model="entry.description">
-            <div class="tracker__table__actions">
-              <DeleteIcon @click="removeEntry(ri)"/>
-            </div>
           </td>
         </tr>
-        <tr v-for="(task, ti) in entry.tasks" :key="`${ri}${ti}`" class="tracker__table__row-end">
+        <tr v-for="(task, ti) in entry.tasks" :key="`${ri}${ti}`" class="tracker__table__row-end"
+            @click.right="e => showContextMenu(e, ri, ti)">
           <td>
             <input type="text" v-model="task.comment">
           </td>
@@ -26,15 +24,20 @@
           </td>
           <td>
             {{ formatTime(task.endTime) }}
-            <div class="tracker__table__actions">
-              <StopIcon v-if="task.state === STATE.COUNTING" @click="task.state = STATE.STOPPED"/>
-              <StartIcon v-else @click="resetCounter(task)"/>
-              <DeleteIcon @click="removeTask(ri, ti)"/>
-            </div>
           </td>
         </tr>
       </template>
     </table>
+    <div tabindex="-1" ref="div" @blur="hideContextMenu">
+      <div class="tracker__context-menu" :style="this.selectedPosition" v-if="selectedTask">
+        <StopIcon v-if="selectedTask.state === STATE.COUNTING" @click="stopCounter(selectedTask)"/>
+        <StartIcon v-else @click="resetCounter(selectedTask)"/>
+        <DeleteIcon @click="removeTask(selectedEntryIndex, selectedTaskIndex)"/>
+      </div>
+      <div class="tracker__context-menu" :style="this.selectedPosition" v-else-if="selectedEntry">
+        <DeleteIcon @click="removeEntry(selectedEntryIndex)"/>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -55,13 +58,26 @@ export default {
   computed: {
     STATE() {
       return STATE;
+    },
+    selectedTaskIndex() {
+      return this.selectedIndexes[1];
+    },
+    selectedEntryIndex() {
+      return this.selectedIndexes[0];
+    },
+    selectedTask() {
+      return this.selectedEntry?.tasks[this.selectedTaskIndex];
+    },
+    selectedEntry() {
+      return this.tracker[this.selectedEntryIndex];
     }
   },
   data() {
     return {
-      tracker: [
-      ],
-      timerId: null
+      tracker: [],
+      timerId: null,
+      selectedIndexes: [],
+      selectedPosition: { top: 0, left: 0 },
     }
   },
   methods: {
@@ -80,18 +96,23 @@ export default {
       return `${hours}:${minutes}:${seconds}`;
     },
     updateTimer() {
-      this.timerId = setInterval(() => {
-        this.tracker.forEach((entry) => {
-          entry.tasks.forEach((task) => {
-            if (task.state === STATE.COUNTING) {
-              task.endTime = Math.floor(((new Date()) - task.countFromDate) / 1000);
-            }
-          })
+      this.tracker.forEach((entry) => {
+        entry.tasks.forEach((task) => {
+          if (task.state === STATE.COUNTING) {
+            task.endTime = Math.floor(((new Date()) - task.countFromDate) / 1000);
+          }
         })
+      })
+    },
+    updateOnInterval() {
+      this.timerId = setInterval(() => {
+        this.updateTimer();
+        localStorage.setItem("tracker", JSON.stringify(this.tracker));
       }, 1000);
     },
     removeTask(rowIndex, taskIndex) {
       this.tracker[rowIndex].tasks.splice(taskIndex, 1);
+      this.hideContextMenu();
     },
     addTask(rowIndex) {
       this.tracker[rowIndex].tasks.push({
@@ -104,17 +125,40 @@ export default {
     },
     removeEntry(rowIndex) {
       this.tracker.splice(rowIndex, 1);
+      this.hideContextMenu();
     },
     addEntry() {
-      this.tracker.push({name: "Имя", description: "Описание", tasks: []})
+      this.tracker.push({name: "Имя", description: "Описание", tasks: []});
+      this.hideContextMenu();
+    },
+    stopCounter(task) {
+      task.state = STATE.STOPPED;
     },
     resetCounter(task) {
       task.state = STATE.COUNTING;
       task.countFromDate = new Date(Date.now() - (task.endTime * 1000));
+    },
+    showContextMenu(e, entryIndex, taskIndex) {
+      e.preventDefault();
+      this.selectedIndexes = [entryIndex, taskIndex];
+      this.selectedPosition = { top: `${e.pageY}px`, left: `${e.pageX}px` };
+      this.$refs.div.focus();
+    },
+    hideContextMenu() {
+      this.selectedIndexes = [];
     }
   },
   created() {
+    let stored = JSON.parse(localStorage.getItem("tracker"));
+    for (const entry of stored) {
+      for (const task of entry.tasks) {
+        task.countFromDate = new Date(task.countFromDate);
+        task.startTime = new Date(task.startTime);
+      }
+    }
+    this.tracker = stored;
     this.updateTimer();
+    this.updateOnInterval();
   },
   beforeDestroy() {
     clearInterval(this.timerId);
@@ -157,37 +201,6 @@ export default {
       }
     }
 
-    tr {
-      position: relative;
-
-      &:hover .tracker__table__actions {
-        visibility: visible;
-        opacity: 1;
-      }
-
-      .tracker__table__actions {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: red;
-        position: absolute;
-        cursor: pointer;
-        top: 50%;
-        right: 0;
-        transform: translate(100%, -50%);
-        padding: 10px;
-        visibility: hidden;
-        opacity: 0;
-        transition: all .4s ease;
-        gap: 6px;
-
-        svg {
-          height: 1em;
-          width: 1em;
-        }
-      }
-    }
-
     &__add-task {
       border: none;
       outline: none;
@@ -201,6 +214,25 @@ export default {
 
     &__row-end {
       background: rgba(0, 0, 0, .05);
+    }
+  }
+
+  &__context-menu {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    background: #ffffff;
+    border-radius: 6px;
+    padding: 10px;
+    box-shadow: #3b3b3b12 1px 1px 12px 2px;
+
+    svg {
+      height: 1em;
+      width: 1em;
     }
   }
 }
