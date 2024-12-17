@@ -56,6 +56,11 @@
         ObjectDiff
       </router-link>
     </p>
+    <p>
+      <router-link :to="{ name: 'chartDrawer' }">
+        ChartDrawer
+      </router-link>
+    </p>
   </div>
 </template>
 <script>

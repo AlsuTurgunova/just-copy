@@ -104,6 +104,11 @@ const routes = [
     path: '/custom-date',
     name: 'customDate',
     component: () => import(/* webpackChunkName: "objectDiff" */'../views/./CustomDatePage')
+  },
+  {
+    path: '/chart-drawer',
+    name: 'chartDrawer',
+    component: () => import(/* webpackChunkName: "chartDrawer" */'../views/ChartDrawer.vue')
   }
 ]
 
