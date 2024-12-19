@@ -1,56 +1,43 @@
 import { OrthogonalRouter } from "./OrthogonalRouter";
 import { Point, Rectangle } from "./math";
+import Vue from "vue";
 
 export class ChartDrawer {
-  constructor(canvas) {
-    canvas.width = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-    // Масштаб, насколько сетка меньше размера canvas
-    // 1 = не уменьшать сетку, влияет на производительность
-    this.scale = 10;
-    // Отступ соединений от фигур (с учётом масштаба)
+  constructor(width, height, scale, targetElem) {
+    // Отступ соединений от фигур
     // Нужен для красоты, при расчётах путей, чтобы они шли на расстоянии от фигур
     this.figureMargin = 1;
-    this.canvas = canvas;
-    this.ctx = this.canvas.getContext('2d');
-    /** @type {Rectangle[]} */
-    this.rectangles = [];
-    /** @type {{start: Point, end: Point, path: Point[]}[]} */
-    this.arrows = [];
-    /** @type {Point|null} */
-    this.startPoint = null;
-    /** @type {Point|null} */
-    this.endPoint = null;
-    /** @type {Rectangle|null} */
-    this.currentRectangle = null;
-    this.isWorking = true;
     // Класс для расчётов путей
     this.router = new OrthogonalRouter(Array.from(
-      { length: this.scaleDown(this.canvas.width) },
-      () => Array(this.scaleDown(this.canvas.height)).fill(0)
+      { length: width },
+      () => Array(height).fill(0)
     ));
-    // Толщина пути
-    this.pathThickness = 4;
-    // Цвет пути
-    this.pathColor = 'red';
-    // Цвет фигур
-    this.rectColor = 'rgb(0, 128, 255)';
+    /** @type {Rectangle[]} */
+    this.rectangles = Vue.observable([]);
+    /** @type {{start: Point, end: Point, path: Point[]}[]} */
+    this.arrows = Vue.observable([]);
+    /** @type {Point|null} */
+    this.startPoint = Vue.observable(null);
+    /** @type {Point|null} */
+    this.endPoint = Vue.observable(null);
+    /** @type {Rectangle|null} */
+    this.currentRectangle = Vue.observable(null);
+    this.targetElem = targetElem;
+    this.scale = scale;
 
     this.initEvents();
-    this.render();
   }
 
   initEvents() {
-    this.canvas.addEventListener('mousedown', this.onMouseDown);
-    this.canvas.addEventListener('mousemove', this.onMouseMove);
-    this.canvas.addEventListener('mouseup', this.onMouseUp);
+    this.targetElem.addEventListener('mousedown', this.onMouseDown);
+    this.targetElem.addEventListener('mousemove', this.onMouseMove);
+    this.targetElem.addEventListener('mouseup', this.onMouseUp);
   }
 
   destroy() {
-    this.canvas.removeEventListener('mousedown', this.onMouseDown);
-    this.canvas.removeEventListener('mousemove', this.onMouseMove);
-    this.canvas.removeEventListener('mouseup', this.onMouseUp);
-    this.isWorking = false;
+    this.targetElem.removeEventListener('mousedown', this.onMouseDown);
+    this.targetElem.removeEventListener('mousemove', this.onMouseMove);
+    this.targetElem.removeEventListener('mouseup', this.onMouseUp);
   }
 
   onMouseDown = (event) => {
@@ -77,7 +64,7 @@ export class ChartDrawer {
 
   onMouseUp = (event) => {
     if (this.currentRectangle) {
-      this.currentRectangle.normalize();
+      this.currentRectangle = this.currentRectangle.abs();
       this.rectangles.push(this.currentRectangle);
       this.router.addObstacle(this.currentRectangle.addMargin(this.figureMargin));
     } else if (this.startPoint) {
@@ -140,84 +127,8 @@ export class ChartDrawer {
     return Math.floor(coordinate / this.scale);
   }
 
-  scaleUp(coordinate) {
-    return coordinate * this.scale;
-  }
-
   getMousePosition(event) {
-    const rect = this.canvas.getBoundingClientRect();
-    return new Point(event.clientX - rect.left, event.clientY - rect.top).div(this.scale);
-  }
-
-  render() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-    // Рендерим предпросмотр рисуемой фигуры
-    if (this.currentRectangle) {
-      this.ctx.strokeStyle = 'black';
-      this.strokeRect(this.currentRectangle);
-    }
-
-    // Рендерим пути между фигурами
-    this.arrows.forEach(arrow => {
-      this.ctx.strokeStyle = this.pathColor;
-      this.ctx.lineWidth = this.pathThickness;
-      this.ctx.beginPath();
-      this.moveTo(arrow.start);
-      arrow.path.forEach((pos) => this.lineTo(pos));
-      this.lineTo(arrow.end);
-      this.ctx.stroke();
-    });
-
-    // Рендерим фигуры
-    this.rectangles.forEach(rect => {
-      this.ctx.fillStyle = this.rectColor;
-      this.fillRect(rect);
-    });
-
-    // Рендерим предпросмотр пути
-    if (this.startPoint && this.endPoint) {
-      this.ctx.strokeStyle = this.pathColor;
-      this.ctx.beginPath();
-      this.moveTo(this.startPoint);
-      this.lineTo(this.endPoint);
-      this.ctx.stroke();
-    }
-
-    if (this.isWorking) {
-      requestAnimationFrame(this.render.bind(this));
-    }
-  }
-
-  fillRect(rect) {
-    this.ctx.fillRect(
-      this.scaleUp(rect.x),
-      this.scaleUp(rect.y),
-      this.scaleUp(rect.w),
-      this.scaleUp(rect.h),
-    );
-  }
-
-  strokeRect(rect) {
-    this.ctx.strokeRect(
-      this.scaleUp(rect.x),
-      this.scaleUp(rect.y),
-      this.scaleUp(rect.w),
-      this.scaleUp(rect.h),
-    );
-  }
-
-  moveTo(point) {
-    this.ctx.moveTo(
-      this.scaleUp(point.x),
-      this.scaleUp(point.y),
-    );
-  }
-
-  lineTo(point) {
-    this.ctx.lineTo(
-      this.scaleUp(point.x),
-      this.scaleUp(point.y),
-    );
+    const rect = this.targetElem.getBoundingClientRect();
+    return new Point(this.scaleDown(event.clientX - rect.left), this.scaleDown(event.clientY - rect.top));
   }
 }

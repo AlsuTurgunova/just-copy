@@ -26,6 +26,30 @@ export class OrthogonalRouter {
     }
   }
 
+  /**
+   * @param {Point[]} points
+   */
+  clearPath(points) {
+    if (points.length <= 2) return points;
+
+    const result = [points[0]];
+
+    for (let i = 1; i < points.length - 1; i++) {
+      const { x: x1, y: y1 } = points[i - 1];
+      const { x: x2, y: y2 } = points[i];
+      const { x: x3, y: y3 } = points[i + 1];
+
+      let notSameX = !(x1 === x2 && x2 === x3);
+      let notSameY = !(y1 === y2 && y2 === y3);
+      if(notSameX && notSameY) {
+        result.push([x2, y2]);
+      }
+    }
+
+    result.push(points[points.length - 1]);
+    return result;
+  }
+
   isInBounds(p) {
     return p.x >= 0 && p.y >= 0 && p.x < this.grid.length && p.y < this.grid[0].length;
   }
@@ -69,7 +93,7 @@ export class OrthogonalRouter {
           this.grid[currentPoint.x][currentPoint.y] += 0.5;
           currentPoint = cameFrom[serialize(currentPoint)];
         }
-        return path.reverse();
+        return this.clearPath(path.reverse());
       }
 
       for (const [dx, dy] of this.directions) {
@@ -90,6 +114,7 @@ export class OrthogonalRouter {
       }
     }
 
+    console.log("woopsie")
     return null;
   }
 }

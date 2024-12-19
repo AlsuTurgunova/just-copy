@@ -14,6 +14,10 @@ export class Point {
   eq(point) {
     return this.x === point.x && this.y === point.y;
   }
+
+  toString() {
+    return `${this.x},${this.y}`;
+  }
 }
 
 export class Rectangle {
@@ -31,15 +35,26 @@ export class Rectangle {
     return rect;
   }
 
-  normalize() {
-    if(this.w < 0) {
-      this.x += this.w;
-      this.w *= -1;
+  static fromPoints(x, y, w, h) {
+    let rect = new Rectangle();
+    rect.x = x;
+    rect.y = y;
+    rect.w = w;
+    rect.h = h;
+    return rect;
+  }
+
+  abs() {
+    let newRect = Rectangle.fromPoints(this.x, this.y, this.w, this.h);
+    if(newRect.w < 0) {
+      newRect.x += newRect.w;
+      newRect.w *= -1;
     }
-    if(this.h < 0) {
-      this.y += this.h;
-      this.h *= -1;
+    if(newRect.h < 0) {
+      newRect.y += newRect.h;
+      newRect.h *= -1;
     }
+    return newRect;
   }
 
   isInside(point) {
@@ -48,11 +63,9 @@ export class Rectangle {
   }
 
   addMargin(margin) {
-    return Rectangle.fromSize(
-      new Point(
-        this.x - margin,
-        this.y - margin
-      ),
+    return Rectangle.fromPoints(
+      this.x - margin,
+      this.y - margin,
       this.w + 1 + margin * 2,
       this.h + 1 + margin * 2,
     )
